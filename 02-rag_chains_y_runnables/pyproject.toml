@@ -1,0 +1,26 @@
+[project]
+name = "044-lc1-projects"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "julio4ai", email = "juliocolomer@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "jupyterlab>=4.5.1,<5.0.0",
+    "langchain (>=1.2.0,<2.0.0)",
+    "langchain-openai (>=1.1.6,<2.0.0)",
+    "langchain-community (>=0.4.1,<0.5.0)",
+    "pypdf>=6.6.0,<7.0.0",
+    "python-dotenv>=1.2.1,<2.0.0",
+    "sqlalchemy>=2.0.45,<3.0.0",
+    "langchain-text-splitters (>=1.1.1,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "044_lc1_projects", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
