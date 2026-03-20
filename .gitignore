@@ -1,5 +1,5 @@
 .env
 pdf_contratos_seguro/
-dat_reviews/
+data_reviews/
 documentos_soporte_tecnico/
 *.sqlite
