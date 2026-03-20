@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 _= load_dotenv(find_dotenv())
 
@@ -96,6 +97,18 @@ while True:
         #ejecutar query
         resultado= db.run(query)
         print(f"Resultado SQL: \n{resultado}\n")
+
+        #Mostrar resultado como DataFrame si es posible
+        try:
+            import ast
+            datos = ast.literal_eval(resultado)
+            if isinstance(datos, list) and len(datos) > 0:
+                df = pd.DataFrame(datos)
+                print("Resultado en tabla:")
+                print(df.to_string(index=False))
+                print()
+        except:
+            pass
 
         #respuesta en lenguaje natural
         respuesta = respuesta_chain.invoke({"pregunta": pregunta, "resultado": resultado})

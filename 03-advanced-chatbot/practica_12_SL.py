@@ -1,4 +1,5 @@
 import os
+import pandas as pd 
 from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())
 
@@ -9,6 +10,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableLambda
 
 #Cargamos los documentos
 
@@ -64,6 +66,9 @@ chain = (
     | llm
 )
 
+#Registro de consultas para el dataframe
+registro= []
+
 # Bucle de preguntas
 print("\nSistema RAG iniciado. Escribe 'salir' para terminar.\n")
 
@@ -74,5 +79,30 @@ while True:
         print("Sistema cerrado.")
         break
     
+
+    #Recuperar elementos relevantes
+    docs_relevantes= retriever.invoke(pregunta)
+
+    #Mostrar documentos recuperados
+
+    print("\nDocumentos relevantes recuperados: ")
+    for i, doc in enumerate(docs_relevantes):
+        print(f"  [{i+1}] {doc.metadata.get('source', 'desconocido')} → {doc.page_content[:100]}...")
+
+    #Generar respuesta
     response = chain.invoke(pregunta)
     print(f"\nAsistente: {response.content}\n")
+
+    #Guardar registro
+    registro.append({
+        "consulta": pregunta,
+        "documentos_usados": [doc.metadata.get('source', 'desconocido') for doc in docs_relevantes],
+        "respuesta": response.content
+    })
+
+    #Mostrar dataframe al salir
+
+    if registro:
+        df= pd.DataFrame(registro)
+        print("\nRegistro de consultas: ")
+        print(df)
