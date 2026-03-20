@@ -2,3 +2,4 @@
 pdf_contratos_seguro/
 dat_reviews/
 documentos_soporte_tecnico/
+*.sqlite
