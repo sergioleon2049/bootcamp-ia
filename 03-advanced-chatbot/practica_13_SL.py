@@ -1,28 +1,21 @@
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
 from dotenv import load_dotenv, find_dotenv
 _= load_dotenv(find_dotenv())
-
 from langchain_community.utilities import SQLDatabase
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 #Instanciar LLM
-
-llm = ChatOpenAI(
-    model='gpt-5-mini',
-    temperature=1
-)
-
+llm = ChatOpenAI(model='gpt-5-mini', temperature=1)
 sql_parser = StrOutputParser()
 
 #Conectar a la BBDD
-
 db = SQLDatabase.from_uri("sqlite:///football_db.sqlite")
 
 #Metadata info
-
 metadata_text = """
 La base de datos contiene las siguientes tablas relevantes:
 Match:
@@ -45,9 +38,7 @@ Notas:
 - Las temporadas están formateadas como `'2008/2009'`, `'2011/2012'`, etc.
 """
 
-
 # Chain 1: pregunta a SQL
-
 sql_prompt = ChatPromptTemplate.from_messages([
     ("system", f"""
     Eres un experto en bases de datos de fútbol.
@@ -63,11 +54,9 @@ sql_prompt = ChatPromptTemplate.from_messages([
     """),
     ("user", "{pregunta}")
 ])
-
 sql_chain = sql_prompt | llm | sql_parser
 
 #Chain 2: resultado SQL. Respuesta en lenguaje natural
-
 respuesta_prompt = ChatPromptTemplate.from_messages([
     ("system", """
     Eres un asistente experto en fútbol.
@@ -75,44 +64,58 @@ respuesta_prompt = ChatPromptTemplate.from_messages([
     """),
     ("user", "Pregunta: {pregunta}\nResultado SQL: {resultado}")
 ])
-
 respuesta_chain = respuesta_prompt | llm | sql_parser
 
 #Bucle de preguntas
-
-print("Sistema de consultas de fúbtol habilitado. Escribe salir para terminar.\n")
+print("Sistema de consultas de fútbol habilitado. Escribe salir para terminar.\n")
 
 while True:
-    pregunta= input("Usuario: ")
-
-    if pregunta.lower()== "salir":
+    pregunta = input("Usuario: ")
+    if pregunta.lower() == "salir":
         print("Apagando...")
         break
-
     try:
         #Generar SQL
-        query= sql_chain.invoke({"pregunta": pregunta})
+        query = sql_chain.invoke({"pregunta": pregunta})
         print(f"\nSQL generado: \n{query}\n")
 
-        #ejecutar query
-        resultado= db.run(query)
+        #Ejecutar query
+        resultado = db.run(query)
         print(f"Resultado SQL: \n{resultado}\n")
 
         #Mostrar resultado como DataFrame si es posible
+        df_resultado = None
         try:
             import ast
             datos = ast.literal_eval(resultado)
             if isinstance(datos, list) and len(datos) > 0:
-                df = pd.DataFrame(datos)
+                df_resultado = pd.DataFrame(datos)
                 print("Resultado en tabla:")
-                print(df.to_string(index=False))
+                print(df_resultado.to_string(index=False))
                 print()
         except:
             pass
 
-        #respuesta en lenguaje natural
+        #Respuesta en lenguaje natural
         respuesta = respuesta_chain.invoke({"pregunta": pregunta, "resultado": resultado})
         print(f"Respuesta: {respuesta}\n")
+
+        #Ofrecer gráfico si hay datos numéricos
+        if df_resultado is not None and not df_resultado.empty:
+            cols_numericas = df_resultado.select_dtypes(include='number').columns.tolist()
+            if cols_numericas:
+                ver_grafico = input("¿Quieres ver un gráfico de estos resultados? (s/n): ")
+                if ver_grafico.lower() == "s":
+                    col_numerica = cols_numericas[-1]
+                    col_etiqueta = df_resultado.columns[0]
+                    plt.figure(figsize=(10, 5))
+                    plt.bar(df_resultado[col_etiqueta].astype(str), df_resultado[col_numerica], color="steelblue")
+                    plt.title(pregunta)
+                    plt.xlabel(col_etiqueta)
+                    plt.ylabel(col_numerica)
+                    plt.xticks(rotation=45, ha="right")
+                    plt.tight_layout()
+                    plt.show()
 
     except Exception as e:
         print(f"Error al procesar la consulta: {e}\n")
